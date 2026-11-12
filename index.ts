@@ -5,6 +5,7 @@ import fs from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Socket } from "node:net";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import zlib from "node:zlib";
 
 EventEmitter.defaultMaxListeners = 50;
@@ -314,7 +315,8 @@ self.addEventListener("fetch", (event) => {
     done();
   });
 
-  const { handler } = (await import("./dist/server/entry.mjs")) as {
+  const entryUrl = pathToFileURL(path.join(import.meta.dirname, "dist/server/entry.mjs")).href;
+  const { handler } = (await import(entryUrl)) as {
     handler: (req: unknown, res: unknown, next?: () => void) => void;
   };
   await app
@@ -476,7 +478,7 @@ self.addEventListener("fetch", (event) => {
   } else {
     app.use(handler);
   }
-  app.listen({ port }, (err, addr) => {
+  app.listen({ port, host: "0.0.0.0" }, (err, addr) => {
     if (err) {
       console.error("Server failed to start:", err);
       process.exit(1);
